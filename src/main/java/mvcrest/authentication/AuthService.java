@@ -23,11 +23,6 @@ import java.util.Map;
 public class AuthService {
 
     public static String generateJWT(Korisnik korisnik){
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", korisnik.getUsername());
-        claims.put("password", korisnik.getPassword());
-        claims.put("user", korisnik);
-
         return Jwts.builder().setSubject(korisnik.getUsername())
                 .setExpiration(new Date(new Date().getTime() + 1000*60*60L))
                 .setIssuedAt(new Date())

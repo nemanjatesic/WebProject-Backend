@@ -34,7 +34,9 @@ public class AvioniController {
     @Path("/createKorisnik")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createKorisnik(Korisnik korisnik) {
+    public Response createKorisnik(Korisnik korisnik, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         int code = avioniService.createKorisnik(korisnik);
         if (code == 200)
             return Response.ok(code).build();
@@ -46,7 +48,9 @@ public class AvioniController {
     @Path("/createCompany")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createCompany(AvionskaKompanija avionskaKompanija) {
+    public Response createCompany(AvionskaKompanija avionskaKompanija, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         int code = avioniService.createCompany(avionskaKompanija);
         if (code == 200)
             return Response.ok(code).build();
@@ -58,7 +62,9 @@ public class AvioniController {
     @Path("/changeCompanyName")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response changeCompanyName(AvionskaKompanija avionskaKompanija, @QueryParam("name") String newName) {
+    public Response changeCompanyName(AvionskaKompanija avionskaKompanija, @QueryParam("name") String newName, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         boolean kompanija = avioniService.changeCompanyName(avionskaKompanija, newName);
         if (kompanija)
             return Response.ok().build();
@@ -70,10 +76,7 @@ public class AvioniController {
     @Path("/letovi")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getLetovi(@HeaderParam("Authorization") String auth) {
-        //if (AuthService.isAuthorized(auth))
-            return Response.ok(avioniService.getLetovi()).build();
-        //else
-        //    return Response.status(403).build();
+        return Response.ok(avioniService.getLetovi()).build();
     }
 
     @GET
@@ -100,7 +103,9 @@ public class AvioniController {
     @Path("/modifyKarta")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response modifyKarta(AvionskaKarta avionskaKarta) {
+    public Response modifyKarta(AvionskaKarta avionskaKarta, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         if (avioniService.modifyKarta(avionskaKarta)) {
             return Response.ok().build();
         }else {
@@ -136,14 +141,18 @@ public class AvioniController {
     @DELETE
     @Path("/deleteKarta")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteKartaByID(@QueryParam("kartaID") int ID) {
+    public Response deleteKartaByID(@QueryParam("kartaID") int ID, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         return Response.ok(avioniService.deleteKartaByID(ID)).build();
     }
 
     @DELETE
     @Path("/deleteCompany")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteCompanyByID(@QueryParam("kompanijaID") int ID) {
+    public Response deleteCompanyByID(@QueryParam("kompanijaID") int ID, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         return Response.ok(avioniService.deleteCompanyByID(ID)).build();
     }
 
@@ -176,7 +185,9 @@ public class AvioniController {
     @Path("/addKarta")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addKarta(AvionskaKarta avionskaKarta) {
+    public Response addKarta(AvionskaKarta avionskaKarta, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         int code = avioniService.addKarta(avionskaKarta);
         if (code == 200) {
             return Response.ok(code).build();
@@ -189,7 +200,9 @@ public class AvioniController {
     @Path("/addRezervacija")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addRezervacija(Rezervacija rezervacija) {
+    public Response addRezervacija(Rezervacija rezervacija, @HeaderParam("Authorization") String auth) {
+        if (!AuthService.isAuthorized(auth))
+            return Response.status(403).build();
         int code = avioniService.addRezervacija(rezervacija);
         if (code == 200) {
             return Response.ok(code).build();
@@ -202,12 +215,6 @@ public class AvioniController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response filterRezervacijeForUsername(Filter filter, @HeaderParam("Authorization") String auth, @QueryParam("username") String username) {
-//        int code = avioniService.addRezervacija(rezervacija);
-//        if (code == 200) {
-//            return Response.ok(code).build();
-//        }
-//        return Response.status(code).build();
-
         if (AuthService.isAuthorized(auth))
             return Response.ok(avioniService.filterRezervacijeForUsername(username, filter)).build();
         else

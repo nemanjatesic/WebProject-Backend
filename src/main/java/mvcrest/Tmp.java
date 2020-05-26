@@ -6,10 +6,16 @@ import mvcrest.database.Database;
 import javax.xml.crypto.Data;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Tmp {
 
     public Tmp() throws Exception {
+        for (int i = 0 ; i < 1000000; i++) {
+            Date date = new Date();
+            System.out.println(date.getTime());
+        }
+
 //        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 //
 //        AvionskaKarta avionskaKarta = new AvionskaKarta()

@@ -4,11 +4,11 @@ import mvcrest.avioni.*;
 import mvcrest.util.Util;
 
 import java.sql.*;
+import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Database {
@@ -30,6 +30,7 @@ public class Database {
             instance = new Database();
         return instance;
     }
+
 
     public int addCard(AvionskaKarta avionskaKarta) {
         try {
@@ -90,10 +91,13 @@ public class Database {
     }
 
     public int addKorisnik(Korisnik korisnik) {
-        if (!validateUser(korisnik)) return 409;
+        if (!validateUser(korisnik)) {
+            return 409;
+        }
         for (Korisnik korisnik1 : getAllKorisnici()) {
-            if (korisnik1.getUsername().equals(korisnik.getUsername()))
+            if (korisnik1.getUsername().equals(korisnik.getUsername())) {
                 return 409;
+            }
         }
         try {
             String query = "INSERT INTO korisnik (id, username, password, tip_korisnika, version)"
@@ -189,6 +193,7 @@ public class Database {
             Rezervacija rezervacija = getRezervacijaByID(id);
             if (rezervacija == null)
                 return false;
+            int korisnikID = rezervacija.getKorisnik().getId();
             AvionskaKarta avionskaKarta = getAvionskaKartaByID(rezervacija.getAvionskaKarta().getId());
             avionskaKarta.setAvailable_count(avionskaKarta.getAvailable_count() + 1);
             if (!modifyKarta(avionskaKarta))
@@ -196,11 +201,36 @@ public class Database {
             String sql = "DELETE FROM rezervacija WHERE id=" + id + ";";
             Statement stmt = c.createStatement();
             stmt.executeUpdate(sql);
+
+            updateAllRezervacije(korisnikID);
             return true;
         }catch (Exception e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public void updateAllRezervacije(int korisnikID) {
+        try {
+            List<Rezervacija> rezervacije = getRezervacijeByKorisnikID(korisnikID);
+            java.util.Date datum = new java.util.Date();
+            for (Rezervacija rezervacija : rezervacije) {
+                long currentTime = datum.getTime();
+                long departTime = rezervacija.getAvionskaKarta().getDepart_date().getTime();
+                String sql = "UPDATE rezervacija SET isAvailable=";
+
+                if (departTime - currentTime >= 86400000L)
+                    sql += 1 + " ";
+                else
+                    sql += 0 + " ";
+
+                sql += "WHERE id=" + rezervacija.getId() + ";";
+                Statement stmt = c.createStatement();
+                stmt.executeUpdate(sql);
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean deleteCompanyByID(int id) {
@@ -816,13 +846,13 @@ public class Database {
 
     private boolean validateCompany(AvionskaKompanija avionskaKompanija) {
         if (avionskaKompanija == null) return false;
-        if (!Util.isEmpty(avionskaKompanija.getName())) return false;
+        if (Util.isEmpty(avionskaKompanija.getName())) return false;
         return true;
     }
 
     private boolean validateCity(Grad grad) {
         if (grad == null) return false;
-        if (!Util.isEmpty(grad.getName())) return false;
+        if (Util.isEmpty(grad.getName())) return false;
         return true;
     }
 
@@ -836,8 +866,8 @@ public class Database {
 
     private boolean validateUser(Korisnik korisnik) {
         if (korisnik == null) return false;
-        if (!Util.isEmpty(korisnik.getUsername())) return false;
-        if (!Util.isEmpty(korisnik.getPassword())) return false;
+        if (Util.isEmpty(korisnik.getUsername())) return false;
+        if (Util.isEmpty(korisnik.getPassword())) return false;
         return true;
     }
 }
