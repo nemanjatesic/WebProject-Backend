@@ -31,9 +31,9 @@ public class Database {
         return instance;
     }
 
-    public void addCard(AvionskaKarta avionskaKarta) {
+    public int addCard(AvionskaKarta avionskaKarta) {
         try {
-            if (!validateKarta(avionskaKarta)) return;
+            if (!validateKarta(avionskaKarta)) return 409;
             String query = "INSERT INTO avionska_karta (id, one_way, depart_date, return_date, available_count, version, let_id, avionska_kompanija_id)"
                     + " VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement preparedStmt = c.prepareStatement(query);
@@ -48,13 +48,16 @@ public class Database {
             preparedStmt.setInt(6, getFlightByFlight(avionskaKarta.getFlight()).getId());
             preparedStmt.setInt(7, getAvionskaKompanijaIDByName(avionskaKarta.getAvionskaKompanija().getName()));
             preparedStmt.execute();
+            return 200;
         }catch (Exception e) {
             e.printStackTrace();
         }
+        return 500;
     }
 
-    public boolean addCompany(AvionskaKompanija avionskaKompanija) {
-        if (getAllCompanies().contains(avionskaKompanija)) return false;
+    public int addCompany(AvionskaKompanija avionskaKompanija) {
+        if (getAllCompanies().contains(avionskaKompanija)) return 409;
+        if (!validateCompany(avionskaKompanija)) return 409;
         try {
             String query = "INSERT INTO avionska_kompanija (id, name, version)"
                     + " VALUES (DEFAULT, ?, ?)";
@@ -62,15 +65,16 @@ public class Database {
             preparedStmt.setString(1, avionskaKompanija.getName());
             preparedStmt.setInt(2, avionskaKompanija.getVersion());
             preparedStmt.execute();
-            return true;
+            return 200;
         }catch (Exception e) {
             e.printStackTrace();
         }
-        return false;
+        return 500;
     }
 
-    public void addGrad(Grad grad) {
-        if (getAllGradovi().contains(grad)) return;
+    public int addGrad(Grad grad) {
+        if (getAllGradovi().contains(grad)) return 409;
+        if (!validateCity(grad)) return 409;
         try {
             String query = "INSERT INTO grad (id, name, version)"
                     + " VALUES (DEFAULT, ?, ?)";
@@ -78,12 +82,19 @@ public class Database {
             preparedStmt.setString(1, grad.getName());
             preparedStmt.setInt(2, grad.getVersion());
             preparedStmt.execute();
+            return 200;
         }catch (Exception e) {
             e.printStackTrace();
         }
+        return 500;
     }
 
-    public void addKorisnik(Korisnik korisnik) {
+    public int addKorisnik(Korisnik korisnik) {
+        if (!validateUser(korisnik)) return 409;
+        for (Korisnik korisnik1 : getAllKorisnici()) {
+            if (korisnik1.getUsername().equals(korisnik.getUsername()))
+                return 409;
+        }
         try {
             String query = "INSERT INTO korisnik (id, username, password, tip_korisnika, version)"
                     + " VALUES (DEFAULT, ?, ?, ?, ?)";
@@ -93,9 +104,11 @@ public class Database {
             preparedStmt.setString(3, korisnik.getTipKorisnika().toString());
             preparedStmt.setInt(4, korisnik.getVersion());
             preparedStmt.execute();
+            return 200;
         }catch (Exception e) {
             e.printStackTrace();
         }
+        return 500;
     }
 
     public int addRezervacija(Rezervacija rezervacija) {
@@ -126,8 +139,9 @@ public class Database {
         return 500;
     }
 
-    public void addFlight(Let let) {
-        if (getAllFlights().contains(let)) return;
+    public int addFlight(Let let) {
+        if (getAllFlights().contains(let)) return 409;
+        if (!validateFlight(let)) return 409;
         try {
             String query = "INSERT INTO let (id, version, origin_grad_id, destination_grad_id)"
                     + " VALUES (DEFAULT, ?, ?, ?)";
@@ -136,9 +150,11 @@ public class Database {
             preparedStmt.setInt(2, getGradIDByName(let.getGrad_origin().getName()));
             preparedStmt.setInt(3, getGradIDByName(let.getGrad_destination().getName()));
             preparedStmt.execute();
+            return 200;
         }catch (Exception e) {
             e.printStackTrace();
         }
+        return 500;
     }
 
     public boolean deleteAvionskaKartaByID(int id) {
@@ -779,16 +795,49 @@ public class Database {
     /**********************************************************************************************************/
 
     private boolean validateKarta(AvionskaKarta avionskaKarta) {
-        //if (avionskaKarta.getFrom().equals("")) return false;
-        //if (avionskaKarta.getTo().equals("")) return false;
-        if (avionskaKarta.getAvionskaKompanija() == null) return false;
-        if (avionskaKarta.getAvionskaKompanija().getName().equals("")) return false;
+        if (avionskaKarta == null) return false;
+        if (!validateFlight(avionskaKarta.getFlight())) return false;
+        if (!validateCompany(avionskaKarta.getAvionskaKompanija())) return false;
         if (avionskaKarta.getDepart_date() == null) return false;
         if (!avionskaKarta.isOne_way()) {
             if (avionskaKarta.getReturn_date() == null) return false;
             if (avionskaKarta.getReturn_date().before(avionskaKarta.getDepart_date())) return false;
         }
-        //return !avionskaKarta.getFrom().equals(avionskaKarta.getTo());
+        return true;
+    }
+
+    private boolean validateFlight(Let let) {
+        if (let == null) return false;
+        if (!validateCity(let.getGrad_destination())) return false;
+        if (!validateCity(let.getGrad_origin())) return false;
+        if (let.getGrad_destination().equals(let.getGrad_origin())) return false;
+        return true;
+    }
+
+    private boolean validateCompany(AvionskaKompanija avionskaKompanija) {
+        if (avionskaKompanija == null) return false;
+        if (!Util.isEmpty(avionskaKompanija.getName())) return false;
+        return true;
+    }
+
+    private boolean validateCity(Grad grad) {
+        if (grad == null) return false;
+        if (!Util.isEmpty(grad.getName())) return false;
+        return true;
+    }
+
+    private boolean validateReservation(Rezervacija rezervacija) {
+        if (rezervacija == null) return false;
+        if (rezervacija.getAvionskaKarta() == null) return false;
+        if (rezervacija.getFlight() == null) return false;
+        if (!validateUser(rezervacija.getKorisnik())) return false;
+        return true;
+    }
+
+    private boolean validateUser(Korisnik korisnik) {
+        if (korisnik == null) return false;
+        if (!Util.isEmpty(korisnik.getUsername())) return false;
+        if (!Util.isEmpty(korisnik.getPassword())) return false;
         return true;
     }
 }

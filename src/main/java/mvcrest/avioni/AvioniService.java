@@ -16,12 +16,20 @@ public class AvioniService {
         return AvioniRepository.filter(filter);
     }
 
-    public AvionskaKarta addKarta(AvionskaKarta avionskaKarta) {
+    public int addKarta(AvionskaKarta avionskaKarta) {
         return AvioniRepository.addKarta(avionskaKarta);
     }
 
     public int addRezervacija(Rezervacija rezervacija) {
         return AvioniRepository.addRezervacija(rezervacija);
+    }
+
+    public int createKorisnik(Korisnik korisnik) {
+        return AvioniRepository.createKorisnik(korisnik);
+    }
+
+    public int createCompany(AvionskaKompanija avionskaKompanija) {
+        return AvioniRepository.createCompany(avionskaKompanija);
     }
 
     public Korisnik getKorisnikByUsernameAndPassword(String username, String password) {
@@ -30,10 +38,6 @@ public class AvioniService {
 
     public List<Let> getLetovi() {
         return AvioniRepository.getLetovi();
-    }
-
-    public Korisnik createKorisnik(Korisnik korisnik) {
-        return AvioniRepository.createKorisnik(korisnik);
     }
 
     public AvionskaKarta getKartaByID(int ID) {
@@ -70,10 +74,6 @@ public class AvioniService {
 
     public List<AvionskaKarta> getCardsForCompanyId(int ID) {
         return AvioniRepository.getCardsForCompanyId(ID);
-    }
-
-    public boolean createCompany(AvionskaKompanija avionskaKompanija) {
-        return AvioniRepository.createCompany(avionskaKompanija);
     }
 
     public boolean changeCompanyName(AvionskaKompanija avionskaKompanija, String newName) {

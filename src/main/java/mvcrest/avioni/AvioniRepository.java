@@ -19,26 +19,28 @@ public class AvioniRepository {
         return Database.getInstance().filter(filter);
     }
 
-    public static AvionskaKarta addKarta(AvionskaKarta avionskaKarta){
-        Database.getInstance().addCard(avionskaKarta);
-        return avionskaKarta;
+    public static int addKarta(AvionskaKarta avionskaKarta){
+        return Database.getInstance().addCard(avionskaKarta);
     }
 
     public static int addRezervacija(Rezervacija rezervacija){
         return Database.getInstance().addRezervacija(rezervacija);
     }
 
+    public static int createKorisnik(Korisnik korisnik) {
+        return Database.getInstance().addKorisnik(korisnik);
+    }
+
     public static Korisnik getKorisnikByUsernameAndPassword(String username, String password) {
         return Database.getInstance().getKorisnikByUsernameAndPassword(username, password);
     }
 
-    public static List<Let> getLetovi() {
-        return Database.getInstance().getAllFlights();
+    public static int createCompany(AvionskaKompanija avionskaKompanija) {
+        return Database.getInstance().addCompany(avionskaKompanija);
     }
 
-    public static Korisnik createKorisnik(Korisnik korisnik) {
-        Database.getInstance().addKorisnik(korisnik);
-        return korisnik;
+    public static List<Let> getLetovi() {
+        return Database.getInstance().getAllFlights();
     }
 
     public static Korisnik getKorisnikByUsername(String username) {
@@ -79,10 +81,6 @@ public class AvioniRepository {
 
     public static List<AvionskaKarta> getCardsForCompanyId(int ID) {
         return Database.getInstance().getCardsForCompanyID(ID);
-    }
-
-    public static boolean createCompany(AvionskaKompanija avionskaKompanija) {
-        return Database.getInstance().addCompany(avionskaKompanija);
     }
 
     public static boolean changeCompanyName(AvionskaKompanija avionskaKompanija, String newName){

@@ -35,7 +35,11 @@ public class AvioniController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createKorisnik(Korisnik korisnik) {
-        return Response.ok(avioniService.createKorisnik(korisnik)).build();
+        int code = avioniService.createKorisnik(korisnik);
+        if (code == 200)
+            return Response.ok(code).build();
+        else
+            return Response.status(code).build();
     }
 
     @POST
@@ -43,11 +47,11 @@ public class AvioniController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createCompany(AvionskaKompanija avionskaKompanija) {
-        boolean kompanija = avioniService.createCompany(avionskaKompanija);
-        if (kompanija)
-            return Response.ok().build();
+        int code = avioniService.createCompany(avionskaKompanija);
+        if (code == 200)
+            return Response.ok(code).build();
         else
-            return Response.status(409).build();
+            return Response.status(code).build();
     }
 
     @POST
@@ -172,8 +176,13 @@ public class AvioniController {
     @Path("/addKarta")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public AvionskaKarta addKarta(AvionskaKarta avionskaKarta) {
-        return avioniService.addKarta(avionskaKarta);
+    public Response addKarta(AvionskaKarta avionskaKarta) {
+        int code = avioniService.addKarta(avionskaKarta);
+        if (code == 200) {
+            return Response.ok(code).build();
+        }else {
+            return Response.status(code).build();
+        }
     }
 
     @POST
