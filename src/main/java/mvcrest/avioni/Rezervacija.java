@@ -4,8 +4,8 @@ import java.util.Objects;
 
 public class Rezervacija {
     private int id;
-    private boolean isAvailable;
-    private Let fligh;
+    private boolean available;
+    private Let flight;
     private AvionskaKarta avionskaKarta;
     private Korisnik korisnik;
     private int version;
@@ -13,10 +13,10 @@ public class Rezervacija {
     public Rezervacija() {
     }
 
-    public Rezervacija(int id, boolean isAvailable, Let fligh, AvionskaKarta avionskaKarta, Korisnik korisnik, int version) {
+    public Rezervacija(int id, boolean available, Let flight, AvionskaKarta avionskaKarta, Korisnik korisnik, int version) {
         this.id = id;
-        this.isAvailable = isAvailable;
-        this.fligh = fligh;
+        this.available = available;
+        this.flight = flight;
         this.avionskaKarta = avionskaKarta;
         this.korisnik = korisnik;
         this.version = version;
@@ -27,13 +27,13 @@ public class Rezervacija {
         return this;
     }
 
-    public Rezervacija isAvailable(boolean isAvailable) {
-        this.isAvailable = isAvailable;
+    public Rezervacija available(boolean available) {
+        this.available = available;
         return this;
     }
 
-    public Rezervacija fligh(Let fligh) {
-        this.fligh = fligh;
+    public Rezervacija flight(Let flight) {
+        this.flight = flight;
         return this;
     }
 
@@ -61,19 +61,19 @@ public class Rezervacija {
     }
 
     public boolean isAvailable() {
-        return isAvailable;
+        return available;
     }
 
     public void setAvailable(boolean available) {
-        isAvailable = available;
+        this.available = available;
     }
 
-    public Let getFligh() {
-        return fligh;
+    public Let getFlight() {
+        return flight;
     }
 
-    public void setFligh(Let fligh) {
-        this.fligh = fligh;
+    public void setFlight(Let flight) {
+        this.flight = flight;
     }
 
     public AvionskaKarta getAvionskaKarta() {
@@ -105,20 +105,22 @@ public class Rezervacija {
         if (this == o) return true;
         if (!(o instanceof Rezervacija)) return false;
         Rezervacija that = (Rezervacija) o;
-        return id == that.id;
+        return Objects.equals(flight.getId(), that.flight.getId()) &&
+                Objects.equals(avionskaKarta.getId(), that.avionskaKarta.getId()) &&
+                Objects.equals(korisnik.getId(), that.korisnik.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(flight, avionskaKarta, korisnik);
     }
 
     @Override
     public String toString() {
         return "Rezervacija{" +
                 "id=" + id +
-                ", isAvailable=" + isAvailable +
-                ", fligh=" + fligh +
+                ", isAvailable=" + available +
+                ", fligh=" + flight +
                 ", avionskaKarta=" + avionskaKarta +
                 ", korisnik=" + korisnik +
                 ", version=" + version +

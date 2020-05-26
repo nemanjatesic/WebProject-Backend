@@ -38,6 +38,30 @@ public class AvioniController {
         return Response.ok(avioniService.createKorisnik(korisnik)).build();
     }
 
+    @POST
+    @Path("/createCompany")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response createCompany(AvionskaKompanija avionskaKompanija) {
+        boolean kompanija = avioniService.createCompany(avionskaKompanija);
+        if (kompanija)
+            return Response.ok().build();
+        else
+            return Response.status(409).build();
+    }
+
+    @POST
+    @Path("/changeCompanyName")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changeCompanyName(AvionskaKompanija avionskaKompanija, @QueryParam("name") String newName) {
+        boolean kompanija = avioniService.changeCompanyName(avionskaKompanija, newName);
+        if (kompanija)
+            return Response.ok().build();
+        else
+            return Response.status(409).build();
+    }
+
     @GET
     @Path("/letovi")
     @Produces(MediaType.APPLICATION_JSON)
@@ -46,6 +70,16 @@ public class AvioniController {
             return Response.ok(avioniService.getLetovi()).build();
         //else
         //    return Response.status(403).build();
+    }
+
+    @GET
+    @Path("/rezervacijeByUsername")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getRezervacijeForUsername(@HeaderParam("Authorization") String auth, @QueryParam("username") String username) {
+        if (AuthService.isAuthorized(auth))
+            return Response.ok(avioniService.getRezervacijeForUsername(username)).build();
+        else
+            return Response.status(403).build();
     }
 
     @GET
@@ -63,7 +97,6 @@ public class AvioniController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response modifyKarta(AvionskaKarta avionskaKarta) {
-        System.out.println(avionskaKarta);
         if (avioniService.modifyKarta(avionskaKarta)) {
             return Response.ok().build();
         }else {
@@ -78,11 +111,46 @@ public class AvioniController {
         return Response.ok(avioniService.getKompanije()).build();
     }
 
+    @GET
+    @Path("/kompanijaById")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getKompanijaById(@QueryParam("kompanijaID") int ID) {
+        var kompanija = avioniService.getKompanijaById(ID);
+        if (kompanija != null)
+            return Response.ok(kompanija).build();
+        else
+            return Response.status(404).build();
+    }
+
+    @GET
+    @Path("/getCardsForCompanyId")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getCardsForCompanyId(@QueryParam("kompanijaID") int ID) {
+        return Response.ok(avioniService.getCardsForCompanyId(ID)).build();
+    }
+
     @DELETE
     @Path("/deleteKarta")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteKartaByID(@QueryParam("kartaID") int ID) {
         return Response.ok(avioniService.deleteKartaByID(ID)).build();
+    }
+
+    @DELETE
+    @Path("/deleteCompany")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteCompanyByID(@QueryParam("kompanijaID") int ID) {
+        return Response.ok(avioniService.deleteCompanyByID(ID)).build();
+    }
+
+    @DELETE
+    @Path("/deleteRezervacija")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteRezervacijaByID(@QueryParam("rezervacijaID") int ID, @HeaderParam("Authorization") String auth) {
+        if (AuthService.isAuthorized(auth))
+            return Response.ok(avioniService.deleteRezervacijaByID(ID)).build();
+        else
+            return Response.status(403).build();
     }
 
     @GET
@@ -106,5 +174,34 @@ public class AvioniController {
     @Produces(MediaType.APPLICATION_JSON)
     public AvionskaKarta addKarta(AvionskaKarta avionskaKarta) {
         return avioniService.addKarta(avionskaKarta);
+    }
+
+    @POST
+    @Path("/addRezervacija")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addRezervacija(Rezervacija rezervacija) {
+        int code = avioniService.addRezervacija(rezervacija);
+        if (code == 200) {
+            return Response.ok(code).build();
+        }
+        return Response.status(code).build();
+    }
+
+    @POST
+    @Path("/filterRezervacijeForUsername")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response filterRezervacijeForUsername(Filter filter, @HeaderParam("Authorization") String auth, @QueryParam("username") String username) {
+//        int code = avioniService.addRezervacija(rezervacija);
+//        if (code == 200) {
+//            return Response.ok(code).build();
+//        }
+//        return Response.status(code).build();
+
+        if (AuthService.isAuthorized(auth))
+            return Response.ok(avioniService.filterRezervacijeForUsername(username, filter)).build();
+        else
+            return Response.status(403).build();
     }
 }

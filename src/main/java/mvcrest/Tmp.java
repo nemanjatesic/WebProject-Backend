@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 
 public class Tmp {
 
-    public Tmp() throws ParseException {
+    public Tmp() throws Exception {
 //        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 //
 //        AvionskaKarta avionskaKarta = new AvionskaKarta()
@@ -33,17 +33,17 @@ public class Tmp {
 
         //Database.getInstance().getAllCards().forEach(System.out::println);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        Database.getInstance().modifyKarta(
-                new AvionskaKarta()
-                .id(5)
-                .one_way(false)
-                .depart_date(sdf.parse("2018-09-09"))
-                .return_date(sdf.parse("2018-10-10"))
-                .available_count(150)
-                .version(1)
-                .flight(new Let().id(6))
-                .avionskaKompanija(new AvionskaKompanija().id(4)));
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+//        Database.getInstance().modifyKarta(
+//                new AvionskaKarta()
+//                .id(5)
+//                .one_way(false)
+//                .depart_date(sdf.parse("2018-09-09"))
+//                .return_date(sdf.parse("2018-10-10"))
+//                .available_count(150)
+//                .version(1)
+//                .flight(new Let().id(6))
+//                .avionskaKompanija(new AvionskaKompanija().id(4)));
 
 
 //        Let let = new Let();
@@ -62,7 +62,7 @@ public class Tmp {
 //        Database.getInstance().getAllCompanies().forEach(System.out::println);
     }
 
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) throws Exception {
         new Tmp();
     }
 }

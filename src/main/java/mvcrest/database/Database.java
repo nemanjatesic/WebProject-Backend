@@ -25,7 +25,7 @@ public class Database {
         }
     }
 
-    public static Database getInstance() {
+    public synchronized static Database getInstance() {
         if (instance == null)
             instance = new Database();
         return instance;
@@ -53,8 +53,8 @@ public class Database {
         }
     }
 
-    public void addCompany(AvionskaKompanija avionskaKompanija) {
-        if (getAllCompanies().contains(avionskaKompanija)) return;
+    public boolean addCompany(AvionskaKompanija avionskaKompanija) {
+        if (getAllCompanies().contains(avionskaKompanija)) return false;
         try {
             String query = "INSERT INTO avionska_kompanija (id, name, version)"
                     + " VALUES (DEFAULT, ?, ?)";
@@ -62,9 +62,11 @@ public class Database {
             preparedStmt.setString(1, avionskaKompanija.getName());
             preparedStmt.setInt(2, avionskaKompanija.getVersion());
             preparedStmt.execute();
+            return true;
         }catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     public void addGrad(Grad grad) {
@@ -96,20 +98,32 @@ public class Database {
         }
     }
 
-    public void addRezervacija(Rezervacija rezervacija) {
+    public int addRezervacija(Rezervacija rezervacija) {
         try {
-            String query = "INSERT INTO rezervacija (id, isAvailable, let_id, avionska_karta_id, korisnik_id, version)"
+            if (rezervacija.getAvionskaKarta().getVersion() != getAvionskaKartaByID(rezervacija.getAvionskaKarta().getId()).getVersion())
+                return 410;
+            if (getAllRezervacije().contains(rezervacija))
+                return 409;
+            AvionskaKarta ak = getAvionskaKartaByID(rezervacija.getAvionskaKarta().getId());
+            if (ak.getAvailable_count() <= 0)
+                return 408;
+            ak.setAvailable_count(ak.getAvailable_count() - 1);
+            if (!modifyKarta(ak))
+                return 408;
+            String query = "INSERT INTO rezervacija (id, isAvailable,version, let_id, avionska_karta_id, korisnik_id)"
                     + " VALUES (DEFAULT, ?, ?, ?, ?, ?)";
             PreparedStatement preparedStmt = c.prepareStatement(query);
             preparedStmt.setBoolean(1, rezervacija.isAvailable());
             preparedStmt.setInt(2, rezervacija.getVersion());
-            preparedStmt.setInt(3, getFlightByFlight(rezervacija.getFligh()).getId());
-            preparedStmt.setInt(4, getAvionskaKartaByAvionskaKarta(rezervacija.getAvionskaKarta()).getId());
-            preparedStmt.setInt(5, getKorisnikIDByName(rezervacija.getKorisnik().getUsername()));
+            preparedStmt.setInt(3, rezervacija.getFlight().getId());
+            preparedStmt.setInt(4, rezervacija.getAvionskaKarta().getId());
+            preparedStmt.setInt(5, rezervacija.getKorisnik().getId());
             preparedStmt.execute();
+            return 200;
         }catch (Exception e) {
             e.printStackTrace();
         }
+        return 500;
     }
 
     public void addFlight(Let let) {
@@ -154,6 +168,51 @@ public class Database {
         return false;
     }
 
+    public boolean deleteRezervacijaByID(int id) {
+        try {
+            Rezervacija rezervacija = getRezervacijaByID(id);
+            if (rezervacija == null)
+                return false;
+            AvionskaKarta avionskaKarta = getAvionskaKartaByID(rezervacija.getAvionskaKarta().getId());
+            avionskaKarta.setAvailable_count(avionskaKarta.getAvailable_count() + 1);
+            if (!modifyKarta(avionskaKarta))
+                return false;
+            String sql = "DELETE FROM rezervacija WHERE id=" + id + ";";
+            Statement stmt = c.createStatement();
+            stmt.executeUpdate(sql);
+            return true;
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean deleteCompanyByID(int id) {
+        try {
+            if (!deleteAllCardsByComapnyID(id))
+                return false;
+            String sql = "DELETE FROM avionska_kompanija WHERE id=" + id + ";";
+            Statement stmt = c.createStatement();
+            stmt.executeUpdate(sql);
+            return true;
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean deleteAllCardsByComapnyID(int id) {
+        try {
+            String sql = "DELETE FROM avionska_karta WHERE avionska_kompanija_id=" + id + ";";
+            Statement stmt = c.createStatement();
+            stmt.executeUpdate(sql);
+            return true;
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean modifyKarta(AvionskaKarta avionskaKarta) {
         try {
             AvionskaKarta kartaInBase = getAvionskaKartaByID(avionskaKarta.getId());
@@ -177,7 +236,6 @@ public class Database {
                 sql += "return_date = null , ";
             sql += "version = " + (avionskaKarta.getVersion() + 1) + " ";
             sql += "WHERE id = " + avionskaKarta.getId() + ";";
-            System.out.println(sql);
             Statement stmt = c.createStatement();
             stmt.executeUpdate(sql);
             return true;
@@ -185,6 +243,65 @@ public class Database {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public boolean changeCompanyName(AvionskaKompanija avionskaKompanija, String newName) {
+        try {
+            for (AvionskaKompanija komp : getAllCompanies()) {
+                if (komp.getId() == avionskaKompanija.getId()) {
+                    if (komp.getName().equals(newName)) {
+                        return false;
+                    }
+                    if (komp.getVersion() != avionskaKompanija.getVersion())
+                        return false;
+                    String sql = "UPDATE avionska_kompanija SET name = '" + newName + "' , version = " + (avionskaKompanija.getVersion() + 1) + " WHERE id =" + avionskaKompanija.getId() + ";";
+                    Statement stmt = c.createStatement();
+                    stmt.executeUpdate(sql);
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public List<Rezervacija> filterRezervacijeForUsername(String username, Filter filter) {
+        try {
+            var lista = getRezervacijeByUsername(username)
+                    .stream()
+                    .filter(rezervacija -> {
+                        if (Util.isEmpty(filter.getMestoPolaska())) return true;
+                        else return rezervacija.getFlight().getGrad_origin().getName().toLowerCase()
+                                .contains(filter.getMestoPolaska().toLowerCase());
+                    })
+                    .filter(rezervacija -> {
+                        if (Util.isEmpty(filter.getDestinacija())) return true;
+                        else return rezervacija.getFlight().getGrad_destination().getName().toLowerCase()
+                                .contains(filter.getDestinacija().toLowerCase());
+                    })
+                    .filter(rezervacija -> {
+                        if (filter.getDatumPolaska() == null) return true;
+                        if (rezervacija.getAvionskaKarta().getDepart_date() == null) return true;
+                        else return filter.getDatumPolaska().equals(rezervacija.getAvionskaKarta().getDepart_date())
+                                || filter.getDatumPolaska().before(rezervacija.getAvionskaKarta().getDepart_date());
+                    })
+                    .filter(rezervacija -> {
+                        if (filter.getDatumPovratka() == null) return true;
+                        if (rezervacija.getAvionskaKarta().getReturn_date() == null) return true;
+                        else return filter.getDatumPovratka().equals(rezervacija.getAvionskaKarta().getReturn_date())
+                                || filter.getDatumPovratka().after(rezervacija.getAvionskaKarta().getReturn_date());
+                    })
+                    .filter(rezervacija -> {
+                        if (filter.getOneWay() == null) return true;
+                        return filter.getOneWay() == rezervacija.getAvionskaKarta().isOne_way();
+                    })
+                    .collect(Collectors.toList());
+            return lista;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
     }
 
     public AvionskaKarta getAvionskaKartaByAvionskaKarta(AvionskaKarta avionskaKarta) {
@@ -240,7 +357,8 @@ public class Database {
 
     public List<AvionskaKarta> filter(Filter filter) {
         try {
-            var filtered = getAllCards().stream()
+            var filtered = getAllCards()
+                    .stream()
                     .filter(avionskaKarta -> {
                         if (Util.isEmpty(filter.getMestoPolaska())) return true;
                         else return avionskaKarta.getFlight().getGrad_origin().getName().toLowerCase()
@@ -307,7 +425,7 @@ public class Database {
 
     public int getKorisnikIDByName(String name) {
         try {
-            String sql = "SELECT * FROM korisnik WHERE name='" + name + "';";
+            String sql = "SELECT * FROM korisnik WHERE username='" + name + "';";
             Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
 
@@ -320,7 +438,24 @@ public class Database {
         return 0;
     }
 
+    public List<Rezervacija> getRezervacijeByUsername(String username) {
+        List<Rezervacija> rezervacije = new ArrayList<>();
+        try {
+            int korisnikID = getKorisnikIDByName(username);
+            if (korisnikID == 0) return rezervacije;
 
+            String sql = "SELECT * FROM rezervacija WHERE korisnik_id=" + korisnikID + ";";
+            Statement stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                rezervacije.add(makeRezervacija(rs));
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rezervacije;
+    }
 
 
 
@@ -446,6 +581,22 @@ public class Database {
         return karte;
     }
 
+    public List<AvionskaKarta> getCardsForCompanyID(int id) {
+        List<AvionskaKarta> karte = new ArrayList<>();
+        try {
+            String sql = "SELECT * FROM avionska_karta WHERE avionska_kompanija_id=" + id + ";";
+            Statement stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                karte.add(makeAvionskaKarta(rs));
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return karte;
+    }
+
     public List<Rezervacija> getRezervacijeByKorisnikID(int id) {
         List<Rezervacija> rezervacije = new ArrayList<>();
         try {
@@ -540,6 +691,21 @@ public class Database {
         return null;
     }
 
+    public Rezervacija getRezervacijaByID(int id) {
+        try {
+            String sql = "SELECT * FROM rezervacija WHERE id=" + id + ";";
+            Statement stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            if (rs.next()) {
+                return makeRezervacija(rs);
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /** END OF GET BY ID **/
     /**********************************************************************************************************/
 
@@ -602,8 +768,8 @@ public class Database {
     public Rezervacija makeRezervacija(ResultSet rs) throws SQLException {
         return new Rezervacija()
             .id(rs.getInt("id"))
-            .isAvailable(rs.getInt("isAvailable") == 1)
-            .fligh(getFlightByID(rs.getInt("let_id")))
+            .available(rs.getInt("isAvailable") == 1)
+            .flight(getFlightByID(rs.getInt("let_id")))
             .avionskaKarta(getAvionskaKartaByID(rs.getInt("avionska_karta_id")))
             .korisnik(getKorisnikByID(rs.getInt("korisnik_id")))
             .version(rs.getInt("version"));
